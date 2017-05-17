@@ -235,6 +235,16 @@ namespace Dirlididi_Windows
             webclient.DownloadStringAsync(new Uri(dirlididiApiBaseAddress + "problem/" + textBoxProblemID.Text));
         }
 
+        public static string debugString(string x)
+        {
+            string y = "";
+            for (int i = 0; i < x.Length; i++)
+            {
+                y += " " + (int)x[i];
+            }
+            return y;
+        }
+
         private void webclient_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
         {
             try
@@ -285,8 +295,15 @@ namespace Dirlididi_Windows
                                 processExecute.StandardInput.WriteLine(problem.tests[i].input);
                                 bool tle = processExecute.WaitForExit(2000);
 
-                                error = processExecute.StandardError.ReadToEnd();
-                                string output = processExecute.StandardOutput.ReadToEnd();
+                                string output = "";
+                                if (tle)
+                                {
+                                    error = processExecute.StandardError.ReadToEnd();
+                                    output = processExecute.StandardOutput.ReadToEnd();
+                                }
+
+                                output = output.Replace("\r\n", "\n").TrimEnd('\n');
+                                string outputOfServer = problem.tests[i].output.TrimEnd('\n');
 
                                 if (!tle)
                                 {
@@ -297,7 +314,7 @@ namespace Dirlididi_Windows
                                     richTextBoxResult.AppendText(error + "\n\n", Color.Red);
                                     haveError = true;
                                 }
-                                else if (output.Replace("\r\n", "\n") != problem.tests[i].output + "\n")
+                                else if (output != outputOfServer)
                                 {
                                     List<string> miniList = new List<string>(2);
                                     miniList.AddRange(new string[] { problem.tests[i].key, output.Replace("\r\n", "\n") });
@@ -306,7 +323,9 @@ namespace Dirlididi_Windows
                                     richTextBoxResult.AppendText("Diferenças na saída...\n", Color.Red);
 
                                     StringReader stringReader0 = new StringReader(output);
-                                    StringReader stringReader1 = new StringReader(problem.tests[i].output);
+                                    StringReader stringReader1 = new StringReader(outputOfServer);
+
+                                    MessageBox.Show("Debugando diferença na saída...\nStr1: " + debugString(output) + "\nStr2: " + debugString(outputOfServer));
 
                                     string line0 = "", line1 = "";
                                     while (((line0 = stringReader0.ReadLine()) != null) | ((line1 = stringReader1.ReadLine()) != null))
